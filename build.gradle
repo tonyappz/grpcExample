@@ -1,7 +1,16 @@
+buildscript {
+    ext {
+        protobufVersion = '3.21.2'
+        protobufPluginVersion = '0.8.19'
+        grpcVersion = '1.48.0'
+    }
+}
+
 plugins {
 	id 'org.springframework.boot' version '2.7.2'
 	id 'io.spring.dependency-management' version '1.0.12.RELEASE'
 	id 'java'
+    id 'com.google.protobuf' version "${protobufPluginVersion}"
 }
 
 group = 'com.tonyappz'
@@ -20,10 +29,44 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'net.devh:grpc-spring-boot-starter:2.13.1.RELEASE'
+    implementation 'net.devh:grpc-server-spring-boot-autoconfigure:2.13.1.RELEASE'
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
+
+protobuf {
+    protoc {
+        if (project.hasProperty('protoc_platform')) {
+            artifact = "com.google.protobuf:protoc:${protobufVersion}:${protoc_platform}"
+        } else {
+            artifact = "com.google.protobuf:protoc:${protobufVersion}"
+        }
+    }
+    generatedFilesBaseDir = "$projectDir/src/generated"
+    clean {
+        delete generatedFilesBaseDir
+    }
+    plugins {
+        grpc {
+            if (project.hasProperty('protoc_platform')) {
+                artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}:${protoc_platform}"
+            } else {
+                artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+            }
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc{}
+        }
+    }
+}
+
 
 tasks.named('test') {
 	useJUnitPlatform()
